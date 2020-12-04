@@ -3,9 +3,7 @@ import pandas as pd, matplotlib.pyplot as plt, numpy as np
 import binarySearch as bis #my module, has some useful binary search functions
 from dateutil import parser #for parsing dates, duh
 import gsfd	#my module, has various regular expressions and things for parsing regular expressions
-import frac #my module, contains a fraction convenience class
-#import linalg_stuff as lin #Has my implementation of linear least squares, among other things.
-#Should really use np.polyfit to get relationship between paired datasets in an overdetermeined system.
+
 def bool_parse(entry):
 	'''Tests if something is a bool or a common string representation of a bool'''
 	try:
@@ -761,25 +759,6 @@ E.g., self.sort_by('names',False,len) will sort the dframe descending by the len
 		for col in others:
 			new.addcol(col,self.attrs[col],self.types[self.keys().index(col)])
 		return new
-	'''to_date is DEPRECATED: just use self.setType(col,dframe.date).
-		def to_date(self,cols):
-		"""col: a list of cols to convert from string to date.
-	If any of the cols are not strings, this will convert them to
-	strings before converting them to dates.
-	Returns: a new dframe in which that col's type has been converted to a
-	datetime.datetime and all the dates in that col are datetime.datetimes."""
-		new=self[:,:]
-		for col in cols:
-			if type(col)!=str:
-				col=self.keys()[col]
-			new.setType(col,str)
-			new.types[self.keys().index(col)]=date
-			for i in range(len(new)):
-				try:
-					new.attrs[col][i]=parser.parse(self.attrs[col][i])
-				except:
-					new.attrs[col][i]=float('nan')
-		return new'''
 	def dollarsToFloat(df,start=0,end=None):
 		'''Return a new dframe in which all columns 
 		(from col number start to col number end)
@@ -1011,27 +990,21 @@ def makeBlah():
 	'''Makes a simple dframe to test the readdict method.'''
 	blah=dframe.readdict(blahdict,True,True)#,truth_names=['Tree','c'])
 	return blah
-
+#####SOME SAMPLE DFRAMES#####
 blah=makeBlah()
-sil=dframe.readcsv('silly_example.csv',has_header=True,parse_dates=True,convert_bools=True)
-sil.append([7,'Unyir','MOKJI','2017/05/11',6,'i',True])
-pdts=dframe.readcsv('Products.csv',True,True,True)
+#sil=dframe.readcsv('silly_example.csv',has_header=True,parse_dates=True,convert_bools=True) #uncomment this once you've downloaded silly_example.csv from this commit.
+#sil.append([7,'Unyir','MOKJI','2017/05/11',6,'i',True])
+#pdts=dframe.readcsv('Products.csv',True,True,True) #uncomment this once you've downloaded Products.csv. Products.csv was created by Jon Acampora for the Elevate Excel course.
 #sil.split(-1,lambda x:[x[:2],x[2:]],['date','month'] 
 #how to split a string column at a specified index.
 
 test_bools=['t','f','True','False','Ti','Fo','T',1,0,'1','yes','No',True,False,'fasle','fhdfkj',2,3,4,'',[],tuple(),{},str]
-
-# class bob(object): #simple class to demonstrate how the __getitem__ method works
-	# def __init__(this):
-		# this.a=[]
-		# this.b=[]
-	# def __getitem__(this,i):
-		# return [this.a[i[0]],this.b[i[1]]]
 		
 jul = dframe.readstring('Boston July Temperatures\r\n-------------------------\r\n\r\nDay High Low\r\n------------\r\n\r\n1 91 70\r\n2 84 69\r\n3 86 68\r\n4 84 68\r\n5 83 70\r\n6 80 68\r\n7 86 73\r\n8 89 71\r\n9 84 67\r\n10 83 65\r\n11 80 66\r\n12 86 63\r\n13 90 69\r\n14 91 72\r\n15 91 72\r\n16 88 72\r\n17 97 76\r\n18 89 70\r\n19 74 66\r\n20 71 64\r\n21 74 61\r\n22 84 61\r\n23 86 66\r\n24 91 68\r\n25 83 65\r\n26 84 66\r\n27 79 64\r\n28 72 63\r\n29 73 64\r\n30 81 63\r\n31 73 63', sep=' ', header=3, ignore_lines=[4,5],parse_dates=True,parse_bools=True)
 
 spring = dframe.readstring('Distance (m) Mass (kg)\n0.0865 0.1\n0.1015 0.15\n0.1106 0.2\n0.1279 0.25\n0.1892 0.3\n0.2695 0.35\n0.2888 0.4\n0.2425 0.45\n0.3465 0.5\n0.3225 0.55\n0.3764 0.6\n0.4263 0.65\n0.4562 0.7\n0.4502 0.75\n0.4499 0.8\n0.4534 0.85\n0.4416 0.9\n0.4304 0.95\n0.437 1.0\n', sep = ' ',header=['distance','mass'],ignore_lines=[0])
 #squr = spring.fitPolynom(1,0,1) #this will create a plot with a first-degree polynomial fit.
+####END OF SAMPLE DFRAMES####
 
 def joinops(left_len,right_len,left_uniques,right_uniques,matches):
 	'''Gives the approximate number of operations required to join two dframes
@@ -1054,6 +1027,8 @@ matches: The number of rows in the new dframe that will be created by the join.
 	print("Make new dframe: "+str(make_dframe))
 	return get_uniques + sort_short + search_for_matches + make_dframe
 
+
+####MY IMPLEMENTATION OF THE CATEGORICAL DATA TYPE####
 class Cframe(object):
 	'''A class I made to test out the Category class, in preparation for adding it to the dframe class.'''
 	def __init__(self):
