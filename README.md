@@ -1,10 +1,12 @@
 # dframe
 This is my first repository on GitHub. I make no warranty as to the quality of the code, and less warranty as to the quality of the repository itself.
-Because this project is essentially intended to say "look at me! I know how to do OOP in Python!" and has no practical use, it will not be maintained or updated.  
+Because this project is essentially intended to say "look at me! I know how to do OOP and use regular expressions in Python!" and has no practical use, it will not be maintained or updated.
 
 The primary content of this repository is the dframe class, which is my attempt to replicate the basic functionality of dataframes in R and Pandas and tables in SQL-
 a set of aligned statically typed columns that enable the easy sorting, grouping and selection of data based on certain parameters.
 As I am not a particularly experienced programmer, there is no reason that anyone (including myself) should want to use dframes instead of Pandas DataFrames.
+
+The second important piece of this repository is the gsfd module, which has a motley assortment of regular expressions and functions for creating regular expressions. The gsfd module is a dependency of the dframe module.
 
 That said, any dframe object has the following attributes:
 attrs, a dictionary mapping keys to lists of values. 
