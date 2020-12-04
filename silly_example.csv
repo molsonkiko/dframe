@@ -1,0 +1,13 @@
+nums,names,cities,date,zone,subzone,contaminated
+,Bluds,BUS,2015-02-34,1,a,t
+,Bluds,BUS,2015-02-34,1,b,f
+,Bluds,BUS,2015-02-34,1,c,t
+0.5,dfsd,FUDG,-13,2,c,y
+0.5,dfsd,FUDG,-13,2,d,n
+0.5,dfsd,FUDG,-13,2,e,n
+0.5,dfsd,FUDG,-13,2,g,n
+1.2,qere,GOLAR,2000-14-15,3,f,y
+1.2,qere,GOLAR,2000-14-15,3,h,y
+3.4,flodt,"q,tun",1995\04/03,4,q,n
+4.6,Kjond,YUNOB,2014-10-17,5,w,True
+4.6,Kjond,YUNOB,2014-10-17,5,z,False

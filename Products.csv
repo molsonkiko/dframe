@@ -1,0 +1,46 @@
+Supplier IDs,Product Code-ID,Category - Product,Description,Standard Cost,List Price,Reorder Level,Last Order Date,Target Level,Quantity Per Unit,Discontinued,Minimum Reorder Quantity,Attachments,Date YYYYMMDD
+Supplier D,NWTB-1,Beverages - Chai,,$13.50 ,$18.00 ,10,5/11/2017,40,10 boxes x 20 bags,FALSE,10,0,20170511
+Supplier J,NWTCO-3,Condiments-Syrup,,$7.50 ,$10.00 ,25,8/20/2017,100,12 - 550 ml bottles,FALSE,25,0,20170820
+Supplier J,NWTCO-4,Condiments - Cajun Seasoning,,$16.50 ,$22.00 ,10,6/10/2017,40,48 - 6 oz jars,FALSE,10,0,20170610
+Supplier J,NWTO-5,Oil - Olive Oil,,$16.01 ,$21.35 ,10,10/19/2017,40,36 boxes,FALSE,10,0,20171019
+"Supplier B, Supplier F",NWTJP-6,Jams-Boysenberry Spread,,$18.75 ,$25.00 ,25,2/11/2017,100,12 - 8 oz jars,TRUE,25,0,20170211
+Supplier B,NWTDFN-7,Dried Goods - Dried Pears,,$22.50 ,$30.00 ,10,6/18/2017,40,12 - 1 lb pkgs.,FALSE,10,0,20170618
+Supplier H,NWTS-8,Sauces - Curry Sauce,,$30.00 ,$40.00 ,10,2/9/2017,40,12 - 12 oz jars,FALSE,10,0,20170209
+"Supplier B, Supplier F",NWTDFN-14,Dried Goods - Walnuts,,$17.44 ,$23.25 ,10,8/20/2017,40,40 - 100 g pkgs.,FALSE,10,0,20170820
+Supplier F,NWTCFV-17,Canned Goods - Fruit Cocktail,,$29.25 ,$39.00 ,10,10/3/2017,40,15.25 OZ,FALSE,10,0,20171003
+Supplier A,NWTBGM-19,Baked Goods - Chocolate Biscuits Mix,,$6.90 ,$9.20 ,5,1/23/2017,20,10 boxes x 12 pieces,FALSE,5,0,20170123
+"Supplier B, Supplier F",NWTJP-6,Jams-Marmalade,,$60.75 ,$81.00 ,10,4/13/2017,40,30 gift boxes,TRUE,10,0,20170413
+Supplier A,NWTBGM-21,Baked Goods - Scones,,$7.50 ,$10.00 ,5,8/23/2017,20,24 pkgs. x 4 pieces,FALSE,5,0,20170823
+Supplier D,NWTB-34,Beverages - Beer,,$10.50 ,$14.00 ,15,5/14/2017,60,24 - 12 oz bottles,FALSE,15,0,20170514
+Supplier G,NWTCM-40,Canned Meat - Crab Meat,,$13.80 ,$18.40 ,30,9/4/2017,120,24 - 4 oz tins,FALSE,30,0,20170904
+Supplier F,NWTSO-41,Soups - Clam Chowder,,$7.24 ,$9.65 ,10,4/22/2017,40,12 - 12 oz cans,FALSE,10,0,20170422
+"Supplier C, Supplier D",NWTB-43,Beverages - Coffee,,$34.50 ,$46.00 ,25,2/18/2017,100,16 - 500 g tins,FALSE,25,0,20170218
+Supplier J,NWTCA-48,Candy - Chocolate,,$9.56 ,$12.75 ,25,4/19/2017,100,10 pkgs,TRUE,25,0,20170419
+Supplier B,NWTDFN-51,Dried Goods - Dried Apples,,$39.75 ,$53.00 ,10,5/10/2017,40,50 - 300 g pkgs.,FALSE,10,0,20170510
+Supplier A,NWTG-52,Grains - Long Grain Rice,,$5.25 ,$7.00 ,25,5/14/2017,100,16 - 2 kg boxes,FALSE,25,0,20170514
+Supplier A,NWTP-56,Pasta - Gnocchi,,$28.50 ,$38.00 ,30,10/17/2017,120,24 - 250 g pkgs.,FALSE,30,0,20171017
+Supplier A,NWTP-57,Pasta - Ravioli,,$14.63 ,$19.50 ,20,2/27/2017,80,24 - 250 g pkgs.,FALSE,20,0,20170227
+Supplier H,NWTS-65,Sauces - Hot Pepper Sauce,,$15.79 ,$21.05 ,10,5/21/2017,40,32 - 8 oz bottles,TRUE,10,0,20170521
+Supplier H,NWTS-66,Sauces - Tomato Sauce,,$12.75 ,$17.00 ,20,12/16/2016,80,24 - 8 oz jars,FALSE,20,0,20161216
+Supplier E,NWTD-72,Dairy Products - Mozzarella,,$26.10 ,$34.80 ,10,12/19/2017,40,24 - 200 g pkgs.,FALSE,10,0,20171219
+"Supplier B, Supplier F",NWTDFN-74,Dried Goods - Almonds,,$7.50 ,$10.00 ,5,2/13/2017,20,5 kg pkg.,FALSE,5,0,20170213
+Supplier J,NWTCO-77,Condiments - Mustard,,$9.75 ,$13.00 ,15,6/4/2017,60,12 boxes,FALSE,15,0,20170604
+Supplier B,NWTDFN-80,Dried Goods - Dried Plums,,$3.00 ,$3.50 ,50,6/24/2017,75,1 lb bag,FALSE,25,0,20170624
+Supplier C,NWTB-81,Beverages - Green Tea,,$2.00 ,$2.99 ,100,10/11/2016,125,20 bags per box,FALSE,25,0,20161011
+Supplier A,NWTC-82,Cereal - Granola,,$2.00 ,$4.00 ,20,7/4/2017,100,,FALSE,,0,20170704
+Supplier I,NWTCS-83,Snacks - Potato Chips,,$0.50 ,$1.80 ,30,12/13/2017,200,,FALSE,,0,20171213
+Supplier A,NWTBGM-85,Baked Goods - Brownie Mix,,$9.00 ,$12.49 ,10,9/23/2016,20,3 boxes,FALSE,5,0,20160923
+Supplier A,NWTBGM-86,Baked Goods - Cake Mix,,$10.50 ,$15.99 ,10,4/21/2017,20,4 boxes,FALSE,5,0,20170421
+Supplier G,NWTB-87,Beverages - Tea,,$2.00 ,$4.00 ,20,1/26/2017,50,100 count per box,FALSE,,0,20170126
+Supplier F,NWTCFV-88,Canned Goods - Pears,,$1.00 ,$1.30 ,10,7/28/2017,40,15.25 OZ,FALSE,,0,20170728
+Supplier F,NWTCFV-89,Canned Goods - Peaches,,$1.00 ,$1.50 ,10,9/21/2017,40,15.25 OZ,FALSE,,0,20170921
+Supplier F,NWTCFV-90,Canned Goods - Pineapple,,$1.00 ,$1.80 ,10,3/7/2017,40,15.25 OZ,FALSE,,0,20170307
+Supplier F,NWTCFV-91,Canned Goods - Cherry Pie Filling,,$1.00 ,$2.00 ,10,3/30/2017,40,15.25 OZ,FALSE,,0,20170330
+Supplier F,NWTCFV-92,Canned Goods - Green Beans,,$1.00 ,$1.20 ,10,3/23/2017,40,14.5 OZ,FALSE,,0,20170323
+Supplier F,NWTCFV-93,Canned Goods - Corn,,$1.00 ,$1.20 ,10,8/29/2017,40,14.5 OZ,FALSE,,0,20170829
+Supplier F,NWTCFV-94,Canned Goods - Peas,,$1.00 ,$1.50 ,10,5/15/2017,40,14.5 OZ,FALSE,,0,20170515
+Supplier G,NWTCM-95,Canned Meat - Tuna Fish,,$0.50 ,$2.00 ,30,1/29/2017,50,5 oz,FALSE,,0,20170129
+Supplier G,NWTCM-96,Canned Meat - Smoked Salmon,,$2.00 ,$4.00 ,30,5/7/2017,50,5 oz,FALSE,,0,20170507
+Supplier A,NWTC-82,Cereal - Hot Cereal,,$3.00 ,$5.00 ,50,11/28/2016,200,,FALSE,,0,20161128
+Supplier F,NWTSO-98,Soups - Vegetable Soup,,$1.00 ,$1.89 ,100,7/15/2017,200,,FALSE,,0,20170715
+Supplier F,NWTSO-99,Soups - Chicken Soup,,$1.00 ,$1.95 ,100,6/29/2017,200,,FALSE,,0,20170629
