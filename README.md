@@ -9,7 +9,7 @@ As I am not a particularly experienced programmer, there is no reason that anyon
 That said, any dframe object has the following attributes:
 attrs, a dictionary mapping keys to lists of values. 
 types, a list of types. Whenever a value is added to the i^th column, the i^th type is applied to that value.
-When a dframe is printed, it will look something like this:
+When a dframe is printed, it will look something like how this looks when you click "Raw" for displaying the README:
 nums     names    cities    date          zone    contaminated  
 float    str      str       dframe.date   int     dframe.Bool   
 nan      Bluds    BUS       None          1       True          
@@ -19,6 +19,7 @@ nan      Bluds    BUS       None          1       False
 1.2      qere     GOLAR     None          3       True          
 
 Total rows: 12. Total cols: 6
+
 
 dframe.Bool and dframe.date are just callable classes that coerce strings to datetime.datetimes and bools, respectively, while leaving anything already of that type alone.
 
