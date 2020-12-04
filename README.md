@@ -1,7 +1,6 @@
 # dframe
 This is my first repository on GitHub. I make no warranty as to the quality of the code, and less warranty as to the quality of the repository itself.
-Because this project is essentially intended to say "look at me! I know how to do OOP in Python!", it will not be maintained or updated. 
-If I update it after these initial commits, it's because I'm procrastinating on a more useful task. 
+Because this project is essentially intended to say "look at me! I know how to do OOP in Python!" and has no practical use, it will not be maintained or updated.  
 
 The primary content of this repository is the dframe class, which is my attempt to replicate the basic functionality of dataframes in R and Pandas and tables in SQL-
 a set of aligned statically typed columns that enable the easy sorting, grouping and selection of data based on certain parameters.
