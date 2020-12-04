@@ -878,19 +878,7 @@ TODO:
 						#need to unpack that element.
 						join_row_left[k]=join_row_left[k][0]
 					newframe.append(join_row_left)
-		# if compare_as_strings: #get rid of the temporary cols made for joining purposes.
-			# newframe.remove(new_other_colname)
-			# newframe.remove(new_self_colname)
-			# try:
-				# self.remove(new_self_colname)
-				# other.remove(new_other_colname)
-			# except:
-				# pass
-		# #joining seems to have the effect of sometimes leaving extra types in the dframes used.
-		# #this should remove any extra types without affecting any of the data.
-		# other.types=other.types[:len(other.keys())]
-		# self.types=self.types[:len(self.keys())]
-		# newframe.types=newframe.types[:len(newframe.keys())]
+		
 		return newframe
 	def antijoin(self,other,self_col,other_col,self_has_nans=True,other_has_nans=True,compare_as_strings=False):
 		'''Find rows of of this dframe (self) such that the entries in those rows
@@ -903,6 +891,7 @@ TODO:
 When you're tired of mucking around with my Project Euler-style attempt at a 
 data frame and you want to get some actual work done, do this.'''
 		return pd.DataFrame(self.attrs)
+	
 	def fitPolynom(self,x_col,y_col,degree=1, plot=True,title=None,legend=None):
 		'''Do linear least squares to get a best fit polynomial of the chosen degree
 relating the data in y_col to the data in the independent RV x_col. 
@@ -916,14 +905,6 @@ legend: The description of the data that will appear in the legend.
 			x_col = self.keys()[x_col]
 		if type(y_col) != str:
 			y_col = self.keys()[y_col]
-		#llsq_mat=np.array([[self[i,x_col]**(degree-j) for j in range(degree)] for i in range(len(self))])
-		#Each row in the llsq_mat contains each of the variables that will be used to solve the
-		#underdetermined system of equations.
-		#In this case, the variables are the x-value raised to powers ranging from 0 to degree.
-		#Go to "def linearLeastSquaresNotes" in linalg_stuff to understand how the fit is obtained.
-		#params, fitCurve = lin.llsq(llsq_mat, self[y_col]) #that's how to get a best fit line
-		#Use np.polyfit to get relationship between x_col and y_col, because it's more efficient
-		#and powerful than using my implementation, and it also gives much better fits for degree > 2.
 		params = np.polyfit(self[x_col], self[y_col], degree)
 		fitCurve = np.polyval(params, self[x_col]) #polyval automatically unpacks the parameters
 			#and raises the data to the correct powers. Useful for high-dimensional fits.
