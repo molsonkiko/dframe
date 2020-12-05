@@ -8,6 +8,8 @@ As I am not a particularly experienced programmer, there is no reason that anyon
 
 The second important piece of this repository is the gsfd module, which has a motley assortment of regular expressions and functions for creating regular expressions. The gsfd module is a dependency of the dframe module.
 
+The third and most practically useful module in this repository is binarySearch, which as the name suggests contains two important implementations of bisection search, bindex and closebin. bindex does traditional bisection search and can either return a boolean ("is this in the iterable?") or the index of an item in a sorted iterable. closebin does bisection search for the closest value in a sorted list of numbers. closebin is particularly useful to me for generating random values of a continuous random variable, because it can quickly map from a random number in [0,1] to the closest value in a lookup table. There are other functions in binarySearch, including a semi-functional implementation of the order function from the R language, but they are far less useful.
+
 That said, any dframe object has the following attributes:
 attrs, a dictionary mapping keys to lists of values. 
 types, a list of types. Whenever a value is added to the i^th column, the i^th type is applied to that value.
