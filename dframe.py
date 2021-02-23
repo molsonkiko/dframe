@@ -1,4 +1,6 @@
-import re,csv,collections, datetime, pyperclip,math, sys
+import re, csv, collections, datetime, os
+import pyperclip, math, sys, sqlite3
+import tqdm #Creates a neat progress bar for loops, with minimal associated overhead.
 import pandas as pd, matplotlib.pyplot as plt, numpy as np
 import binarySearch as bis #my module, has some useful binary search functions
 from dateutil import parser #for parsing dates, duh
@@ -271,12 +273,13 @@ truth_names: An iterable, if not []. If convert_bools is True and this is not []
 	def __str__(self):
 		out=''
 		longest=[]
+		keys = self.keys()
 		#Find the longest string in each column, including types, column names, and entries.
 		#Base the width of each column off of the length of the longest entry, but make it
 		#so that each column is between 8 and 14 characters wide. Very long entries are cut off
 		#with '... '.
 		for i in range(len(self.attrs)):
-			c=self.keys()[i]
+			c=keys[i]
 			longest_this_row=0 #find the longest column name
 			if len(c)>longest_this_row:
 				longest_this_row=len(c)
@@ -286,16 +289,16 @@ truth_names: An iterable, if not []. If convert_bools is True and this is not []
 				if len(str(r))>longest_this_row: #find longest entry in each column
 					longest_this_row=len(str(r))
 			longest.append(longest_this_row)
-		for i in range(len(self.keys())):
-			a=self.keys()[i]
-			L=min(longest[i]+4,max(80//len(self.keys()),14))
+		for i in range(len(keys)):
+			a=keys[i]
+			L=min(longest[i]+4,max(80//len(keys),14))
 			if len(a)>L-2:
 				out+=a[:L-4]+'... ' #cut off long entries.
 			else:
 				out+=a.ljust(L) #use ljust to normalize column width.
 		out+='\n'
 		for i in range(len(self.types)):
-			L=min(longest[i]+4,max(80//len(self.keys()),14))
+			L=min(longest[i]+4,max(80//len(keys),14))
 			t=self.getTypes(i)
 			if len(t)>L-2:
 				out+=t[:L-4]+'... '
@@ -303,9 +306,9 @@ truth_names: An iterable, if not []. If convert_bools is True and this is not []
 				out+=t.ljust(L)
 		out+="\n"
 		for i in range(len(self)):
-			for j in range(len(self.keys())):
-				L=min(longest[j]+4,max(80//len(self.keys()),14))
-				a=self.keys()[j]
+			for j in range(len(keys)):
+				L=min(longest[j]+4,max(80//len(keys),14))
+				a=keys[j]
 				if len(str(self.attrs[a][i]))>L-2:
 					out+=str(self.attrs[a][i])[:L-4]+'... '
 				else:
@@ -507,8 +510,8 @@ truth_names: An iterable, if not None. If convert_bools is True and this is not 
 					# stop=2
 				# new=new.split(str(i),lambda x: crackdate(x,sep_month_and_day),datenames,stop)
 		return new
-	def readstring(string,sep=' ',header=None,ignore_lines=[],parse_dates=True,parse_bools=True):#,truth_names=[]):
-		'''Split a string by the separator sep, and convert it into a dframe.
+	def readstring(string,sep='\s+',header=None,ignore_lines=[],parse_dates=True,parse_bools=True):#,truth_names=[]):
+		'''Split a string by the separator sep (a regex pattern), and convert it into a dframe.
 header: the line number of the header, OR a list of names for the columns.
 ignore_lines: a list of line numbers to ignore.
 parse_dates: If true, coerce all cols containing strings that appear to be 
@@ -517,8 +520,12 @@ parse_bools: Any column that contains only strings representing bools
 	(e.g. True, t, f, yes, no, y, n), will be coerced to bools.
 To define which words are treated as meaning True by Bool, use Bool.setTruthNames(new_names).
 		'''
-		lines=string.split('\n')
-		rows=[line.split(sep) for line in lines]
+		#\s+? is non-greedy, so if it gets multiple consecutive spaces,
+		#it will match each one separately.
+		#\s+ is a better regex for splitting any number of spaces.
+		lines=re.split('\r?\n',string) 
+		#the \r is a non-printable character that sometimes precedes \n.
+		rows=[re.split(sep,line) for line in lines]
 		if header is None:
 			included = [rows[i] for i in range(len(rows)) if i not in ignore_lines]
 			return dframe.readlists(included,None,parse_dates,parse_bools)#,truth_names)
@@ -528,7 +535,7 @@ To define which words are treated as meaning True by Bool, use Bool.setTruthName
 		elif type(header) in [tuple,list]:
 			included = [rows[i] for i in range(len(rows)) if i not in ignore_lines]
 			return dframe.readlists(included,header,parse_dates,parse_bools)#,truth_names)
-	def readclipboard(sep=' ',header=None,ignore_lines=[],parse_dates=True,parse_bools=True):#,truth_names=[]):
+	def readclipboard(sep='\s+',header=None,ignore_lines=[],parse_dates=True,parse_bools=True):#,truth_names=[]):
 		'''Read the current contents of the clipboard as a string, and convert to a dframe.
 See documentation for dframe.readstring.'''
 		return dframe.readstring(pyperclip.paste(),sep,header,ignore_lines,parse_dates,parse_bools)#,truth_names)
@@ -542,6 +549,38 @@ parse_dates: If true, parse strings that look like dates as datetime.datetime ob
 		vals=[list(x.values()) for x in Dict.values()] 
 		#the rows returned by pd.DataFrame.to_dict are themselves dictionaries.
 		return dframe.readdict(dict(zip(cols, vals)),parse_dates=parse_dates)
+		
+	def readsqlite(db_fname,table_name,omit_columns=[],header=None,parse_dates=False,convert_bools=False):
+		'''Reads the table named table_name from the SQLite database with filename db_fname into a dframe.
+omit_columns: optional list of column numbers or names to not write to the dframe to save time and space.
+header: A list of the names of the columns to SELECT from the table. If a name in header is not in the table, 
+	you will raise an error.
+Astute readers will note that omit_columns and header are essentially mirror images of each other, and you really don't need both.
+	This is correct. The motivation for including both is that for large tables it is often more time-consuming to list the
+	columns that you do want than the columns that you don't want.
+See the documentation for dframe.readlists for info on the other args.'''
+		conn=sqlite3.connect(db_fname)
+		cur=conn.cursor()
+		try:
+			if header is None:
+				cur.execute("PRAGMA table_info("+table_name+")") 
+				#returns a list of tuples with column name and type and whatnot
+				pragma=cur.fetchall() 
+				header=[]
+				for i in range(len(pragma)):
+					if i not in omit_columns and pragma[i][1] not in omit_columns:
+						header.append(pragma[i][1]) #the second entry in each tuple is the column name
+			cur.execute("SELECT "+', '.join(header) +" FROM "+str(table_name)) #get all desired columns
+			rows=cur.fetchall()
+			ncols=len(rows[0])
+			
+		except sqlite3.OperationalError as e:
+			print("SQLite3 ERROR: "+str(e))
+			conn.close()
+			return
+		conn.close()
+		return dframe.readlists(rows,header,parse_dates,convert_bools) 
+	
 	def split(df,col,sep,to_names=None,max_split=10000):
 		'''col: a number or name of a column.
 sep: One of the following:
@@ -823,75 +862,172 @@ TODO:
 			self_new_comparison_col.addcol(new_self_colname,[x for x in self_no_nan[self_col]],str)
 			other_new_comparison_col=dframe()
 			other_new_comparison_col.addcol(new_other_colname,[x for x in other_no_nan[other_col]],str)
-			# self_no_nan.addcol(new_self_colname,[x for x in self[self_col]],str)
-			# other_no_nan.addcol(new_other_colname, [x for x in other[other_col]],str)
-			#og_selfname, og_othername = self_col, other_col
 			L_uniques = self_new_comparison_col.uniques_to_rows(new_self_colname)
 			R_uniques = other_new_comparison_col.uniques_to_rows(new_other_colname)
 		else:
 			L_uniques=self_no_nan.uniques_to_rows(self_col)
 			R_uniques=other_no_nan.uniques_to_rows(other_col)
-		lkeys,rkeys=list(L_uniques.keys()),list(R_uniques.keys())
 		if len(L_uniques) > len(R_uniques): #self[self_col] has more unique entries than other[other_col]
-			shortest,longest=rkeys.copy(),lkeys.copy()
+			shortest,longest = R_uniques,L_uniques
 			L_short=False #indicate that the dframe with fewer unique entries is the right one.
 		else: #other[other_col] has at least as many unique entries as self[self_col]
-			shortest,longest=lkeys.copy(),rkeys.copy()
+			shortest, longest = L_uniques, R_uniques
 			L_short=True
-		# print("shortest="+str(['self','other'][not L_short]))
-		# print("Unique entries and corresponding rows of shortest are: "+str([R_uniques,L_uniques][L_short]))
-		# print("Unique entries and corresponding rows of longest are: "+str([L_uniques,R_uniques][L_short]))
-		
-		shortest=sorted(shortest) #sort the unique entries of the dframe with fewer unique entries
 		join_map=dict()
 		#For a given entry, X, in self_col that is also in other_col, this dictionary maps between the
 		#row numbers in self_col where X is found to the row numbers in other_col where X is found.
 		#After all such mappings have been found, all pairs of rows in which self_col and other_col
 		#both contain X (so for example, 12 pairs of rows if 3 rows in self and 4 rows in other both
 		#contain X) will be added to the new dframe.
-		for i in range(len(longest)):
-			#Iterate through UNIQUE keys in the column with more unique entries (longest),
-			#using bisection search to find where in the unique entries of the other dframe (shortest)
-			#each key in longest can be found. If it is found that a matching entry exists in shortest,
-			#map the corresponding row numbers in longest to the matching row numbers in shortest.
-			other_key=bis.bindex(longest[i],shortest,asc=True,get_index=True)
+		for key in shortest:
+			#Iterate through UNIQUE keys in the column with fewer unique entries (shortest),
+			#to find where in the unique entries of the other dframe (longest)
+			#each key in shortest can be found. If it is found that a matching entry exists in longest,
+			#map the corresponding row numbers in shortest to the matching row numbers in longest.
+			other_key = longest.get(key)
+			#no point in sorting and then doing bisection search b/c lookup in a dict is O(1)
+			#while lookup in a sorted list is O(logn)
 			if other_key is not None:
-				if L_short:
-					join_map[tuple(R_uniques[longest[i]])] = L_uniques[shortest[other_key]]
-				else:
-					join_map[tuple(L_uniques[longest[i]])] = R_uniques[shortest[other_key]]
+				join_map[tuple(other_key)] = shortest[key]
 		map_keys=list(join_map.keys())
+		new_keys = self_no_nan.keys()+other_no_nan.keys()
+		dup_keys = dframe()
+		dup_keys.addcol('0',new_keys.copy(),str)
+		dup_key_dict = dup_keys.uniques_to_rows('0')
+		for k in dup_key_dict:
+			if len(dup_key_dict[k])>1:
+				for i in range(1,len(dup_key_dict[k])):
+					ind = dup_key_dict[k][i]
+					new_keys[ind] = new_keys[ind]+'_'+str(i)
 		#return join_map
-		newframe=dframe(self_no_nan.keys()+other_no_nan.keys(),self_no_nan.types+other_no_nan.types)
-		for i in range(len(map_keys)):
+		newframe=dframe(new_keys,self_no_nan.types+other_no_nan.types)
+		lenmapk,lennewk = len(map_keys),len(new_keys)
+		len_self_keys, len_other_keys = len(self_no_nan.keys()), len(other_no_nan.keys())
+		for i in range(lenmapk):
 			cur_key=map_keys[i]
 			for l_row in cur_key:
 				for s_row in join_map[cur_key]:
 					if L_short: #self has fewer unique entries
-						join_row_left = self_no_nan[s_row,:].attrs
-						join_row_left.update(other_no_nan[l_row,:].attrs)
+						for i in range(len_self_keys):
+							newframe.attrs[new_keys[i]].append(self_no_nan[s_row,i])
+						for i in range(len_self_keys,lennewk):
+							newframe.attrs[new_keys[i]].append(other_no_nan[l_row,i-len_self_keys])
 					else: #self has more unique entries.
-						join_row_left = self_no_nan[l_row,:].attrs
-						join_row_left.update(other_no_nan[s_row,:].attrs)
-					for k in join_row_left:
-						#a single row from a dframe is by default a list with one element.
-						#need to unpack that element.
-						join_row_left[k]=join_row_left[k][0]
-					newframe.append(join_row_left)
+						for i in range(len_self_keys):
+							newframe.attrs[new_keys[i]].append(self_no_nan[l_row,i])
+						for i in range(len_self_keys,lennewk):
+							newframe.attrs[new_keys[i]].append(other_no_nan[s_row,i-len_self_keys])
 		
 		return newframe
-	def antijoin(self,other,self_col,other_col,self_has_nans=True,other_has_nans=True,compare_as_strings=False):
+	
+	def antijoin(self,other,self_col,other_col):
 		'''Find rows of of this dframe (self) such that the entries in those rows
-	of self_col are NOT IN other_col of other. See documentation on join.'''
-		entries_in_join=self.join(other,self_col,other_col,self_has_nans,other_has_nans,compare_as_strings).unique(self_col)
+	of self_col are NOT IN other_col of other.'''
+		entries_in_join = set(other.unique(other_col))
+		#Because a set is implemented as a hashtable, checking membership of an
+		#object in a set (or dict) is constant-time. This means that the antijoin
+		#can be run in linear time (an O(n) lookup of all uniques in other,
+		#and an O(n) selection of all entries in self where self_col's value not in other's uniques
 		return self.select(self_col,lambda x: x not in entries_in_join)
+	def semijoin(self,other,self_col,other_col):
+		'''Returns all rows of this dframe such that the entries in those rows of self_col
+ARE IN other_col of other.'''
+		entries_in_join = set(other.unique(other_col))
+		return self.select(self_col,lambda x: x in entries_in_join)
+	
+	def to_row_list(self):
+		'''Return a list of lists containing the values in each row of the dframe.'''
+		return [list(x.values()) for x in self.rows()]
 	
 	def topandas(self):
 		'''Convert this dframe into a pandas.DataFrame.
 When you're tired of mucking around with my Project Euler-style attempt at a 
 data frame and you want to get some actual work done, do this.'''
 		return pd.DataFrame(self.attrs)
-	
+		
+	def to_csv(self,fname,overwrite_if_exists=False):
+		'''Export contents of this dframe to a csv file named fname.
+If overwrite_if_exists is True and a file named fname already exists, this function will overwrite that file.'''
+		if os.path.exists(fname) and not overwrite_if_exists:
+			return "A file with name "+fname+ " already exists."
+		with open(fname,'w',newline='') as f:
+			writer=csv.writer(f,lineterminator='\n')
+			stuff=[list(x.values()) for x in self.rows()]
+			b=writer.writerow(self.keys())
+			for row in tqdm.tqdm(stuff):
+				b=writer.writerow(row)
+		
+	def to_sqlite(self,db_fname,table_name,replace_existing=True):
+		'''Export the contents of this dframe into an SQLite database.
+db_fname: The name of the database to export to. If no database with that name exists, one will be created.
+table_name: The name of the table to be created in the database.
+replace_existing: If True (default), and there is an existing table named table_name in db_fname,
+	this function will drop and replace the existing table.
+	Set this to False if you don't want to overwrite anything.'''
+		typedict={int:'INTEGER',float:'FLOAT',str:'TEXT',date:'DATE',Bool:'INTEGER'}
+		conn=sqlite3.connect(db_fname)
+		cur=conn.cursor()
+		if replace_existing:
+			cur.execute("DROP TABLE IF EXISTS " + table_name)
+		mk_tbl_cmd="CREATE TABLE "+table_name+" ("
+
+		table_keys=["_".join(re.split("[-| ]", x)) for x in self.keys()]
+		for i in range(len(table_keys)):
+			if table_keys[i].isnumeric():
+				table_keys[i] = "c_"+table_keys[i]
+		table_row_names=" ("+table_keys[0]+", "+ ", ".join(table_keys[1:])+") "
+
+		for i in range(len(self.keys())-1):
+			tp,key=self.types[i],table_keys[i]
+			if tp in typedict:
+				mk_tbl_cmd+="'"+key+"' "+typedict[tp]+", "
+			else:
+				mk_tbl_cmd+="'"+key+"' TEXT, "
+		if self.types[-1] in typedict:
+			mk_tbl_cmd+="'"+table_keys[-1]+"' "+typedict[self.types[-1]]+");"
+		else:
+			mk_tbl_cmd+="'"+table_keys[-1]+"' TEXT);"
+		try:
+			cur.execute(mk_tbl_cmd)
+		except sqlite3.OperationalError as e:
+			print("ERROR: "+str(e))
+			cur.close()
+			conn.close()
+			return
+		conn.commit()
+		rows=[list(x.values()) for x in self.rows()]
+		
+		buffersize=max(40,len(rows)//200) 
+		#commit changes every 40 rows or every 0.5% progress, whichever is larger.
+		for r in tqdm.tqdm(range(len(rows))):
+			row=rows[r]
+			nurow=[]
+			for i in range(len(row)):
+				if self.types[i]==Bool:
+					nurow.append(int(row[i]))
+				elif self.types[i]==date:
+					nurow.append(str(row[i]))
+				elif self.types[i] not in [int,float,str]:
+					nurow.append(str(row[i]))
+				else:
+					nurow.append(row[i])
+			try:
+				cur.execute("INSERT INTO "+table_name+ table_row_names+" VALUES ("+("?, "*len(nurow))[:-2]+");",tuple(nurow))
+			except sqlite3.OperationalError as e:
+				print("ERROR: "+str(e))
+				cur.close()
+				conn.close()
+				return
+			except KeyboardInterrupt:
+				cur.close()
+				conn.close()
+				return
+			if r>0 and r%buffersize==0:
+				conn.commit()
+		conn.commit()
+		cur.close()
+		print("\nSuccessfully exported contents of this dframe to table "+table_name+" in SQLite database "+db_fname+".")
+		
 	def fitPolynom(self,x_col,y_col,degree=1, plot=True,title=None,legend=None):
 		'''Do linear least squares to get a best fit polynomial of the chosen degree
 relating the data in y_col to the data in the independent RV x_col. 
@@ -965,7 +1101,6 @@ class date(object):
 		else:
 			return parser.parse(string_or_datetime) 
 			#convert it to a date if it's not already.
-
 blahdict={'a': ['nan', 1, 5, 16, -1], 'b': ['1', 'a', 'hi', 'hello, bob', '5 pizzas, 15 beers. Yo!'], 'c': [12.0, 1.2, 5.6, -153.0, 0.0], 'd': ['b', '5', '7', 'you', 'eat'],'e':['y','t','Tree','b','c']}
 def makeBlah():
 	'''Makes a simple dframe to test the readdict method.'''
@@ -986,6 +1121,29 @@ jul = dframe.readstring('Boston July Temperatures\r\n-------------------------\r
 spring = dframe.readstring('Distance (m) Mass (kg)\n0.0865 0.1\n0.1015 0.15\n0.1106 0.2\n0.1279 0.25\n0.1892 0.3\n0.2695 0.35\n0.2888 0.4\n0.2425 0.45\n0.3465 0.5\n0.3225 0.55\n0.3764 0.6\n0.4263 0.65\n0.4562 0.7\n0.4502 0.75\n0.4499 0.8\n0.4534 0.85\n0.4416 0.9\n0.4304 0.95\n0.437 1.0\n', sep = ' ',header=['distance','mass'],ignore_lines=[0])
 #squr = spring.fitPolynom(1,0,1) #this will create a plot with a first-degree polynomial fit.
 ####END OF SAMPLE DFRAMES####
+
+def det_recursive_df(mat):
+	'''Uses the recursive algorithm to calculate the determinant of a matrix, 
+except uses dframes instead of np.arrays. This is used in my implementation
+of the algorithm that finds the characteristic polynomial of a matrix 
+by making a dframe of polynom objects.'''
+	if type(mat)!=dframe:
+		mat=dframe.readlists(mat)
+	shape=(len(mat),len(mat.keys()))
+	if shape[0]!=shape[1]:
+		raise ValueError("This function only works for square dframes.")
+	if shape==(2,2):
+		return mat[0,0]*mat[1,1]-mat[0,1]*mat[1,0]
+	out=0
+	row=mat[0,:]
+	for i in range(shape[0]):
+		submat=mat[1:,:i]
+		submat=mat.cols([x for x in range(shape[0]) if x!=i])[1:,:]
+		if i%2==0:
+			out+=row[0,i]*det_recursive_df(submat)
+		else:
+			out -= row[0,i]*det_recursive_df(submat)
+	return out
 
 def joinops(left_len,right_len,left_uniques,right_uniques,matches):
 	'''Gives the approximate number of operations required to join two dframes
