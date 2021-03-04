@@ -105,6 +105,139 @@ You may have to actually paste the code directly into the IDE for this function 
 	#with three sigfigs after the decimal point.
 	return t_mu,t_sd,out
 
+#encodings taken from https://stackoverflow.com/users/1709587/mark-amery's 
+#answer to the question at https://stackoverflow.com/questions/1728376/get-a-list-of-all-the-encodings-python-can-encode-to
+
+encodings = [None, #just use the default encoding method of Python's open() function.
+	'utf_8',
+	'utf_8_sig',
+	'utf_32',
+	'latin_1',
+	'utf_32_be',
+	'utf_32_le',
+	'utf_16',
+	'utf_16_be',
+	'utf_16_le',
+	'utf_7',
+    'ascii',
+  'big5',
+ 'big5hkscs',
+ 'cp037',
+ 'cp273',
+ 'cp424',
+ 'cp437',
+ 'cp500',
+ 'cp720',
+ 'cp737',
+ 'cp775',
+ 'cp850',
+ 'cp852',
+ 'cp855',
+ 'cp856',
+ 'cp857',
+ 'cp858',
+ 'cp860',
+ 'cp861',
+ 'cp862',
+ 'cp863',
+ 'cp864',
+ 'cp865',
+ 'cp866',
+ 'cp869',
+ 'cp874',
+ 'cp875',
+ 'cp932',
+ 'cp949',
+ 'cp950',
+ 'cp1006',
+ 'cp1026',
+ 'cp1125',
+ 'cp1140',
+ 'cp1250',
+ 'cp1251',
+ 'cp1252',
+ 'cp1253',
+ 'cp1254',
+ 'cp1255',
+ 'cp1256',
+ 'cp1257',
+ 'cp1258',
+ 'cp65001',
+ 'euc_jp',
+ 'euc_jis_2004',
+ 'euc_jisx0213',
+ 'euc_kr',
+ 'gb2312',
+ 'gbk',
+ 'gb18030',
+ 'hz',
+ 'iso2022_jp',
+ 'iso2022_jp_1',
+ 'iso2022_jp_2',
+ 'iso2022_jp_2004',
+ 'iso2022_jp_3',
+ 'iso2022_jp_ext',
+ 'iso2022_kr',
+ 'iso8859_2',
+ 'iso8859_3',
+ 'iso8859_4',
+ 'iso8859_5',
+ 'iso8859_6',
+ 'iso8859_7',
+ 'iso8859_8',
+ 'iso8859_9',
+ 'iso8859_10',
+ 'iso8859_11',
+ 'iso8859_13',
+ 'iso8859_14',
+ 'iso8859_15',
+ 'iso8859_16',
+ 'johab',
+ 'koi8_r',
+ 'koi8_t',
+ 'koi8_u',
+ 'kz1048',
+ 'mac_cyrillic',
+ 'mac_greek',
+ 'mac_iceland',
+ 'mac_latin2',
+ 'mac_roman',
+ 'mac_turkish',
+ 'ptcp154',
+ 'shift_jis',
+ 'shift_jis_2004',
+ 'shift_jisx0213',
+ "idna",
+ "mbcs",
+ "oem",
+ "palmos",
+ "punycode",
+ "raw_unicode_escape",
+ "rot_13",
+ "undefined",
+ "unicode_escape",
+ "unicode_internal",
+ "base64_codec",
+ "bz2_codec",
+ "hex_codec",
+ "quopri_codec",
+ "uu_codec",
+ "zlib_codec",
+ 'undefined' #always raises an exception
+ ]
+def get_lines_best_encoding(fname, print_on_exception = False):
+	for enc_num,encoding in enumerate(encodings):
+		try:
+			with open(fname,'r', encoding = encoding) as f:
+				#print(encoding,end=', ')
+				return f.readlines() #we found a good encoding, stop trying new ones.
+		except:
+			pass #keep trying other encodings
+	if enc_num >= len(encodings)-1:
+		if not print_on_exception:
+			raise UnicodeDecodeError("Could not find the encoding for this file.")
+		print("Could not find the encoding for this file.")
+
 def grep(Input):
 	"""
 The grep filter searches a .txt file for a particular pattern of characters,
@@ -115,127 +248,139 @@ in the file is referred to as the regular expression
 Format for Input:
 [options] 'pattern' /[filename or containing directory]
 
+By default, returns a dict mapping filenames to a list of lines in that file
+	where the regex is matched. Some options change the return type.
+
 IMPORTANT: You NEED to have exactly one space between the options block and
 the pattern block, the pattern block MUST be enclosed by '', there MUST
 be exactly one space between the pattern block and the filename block, and
 the filename block must be preceded by /.
 
 Options Description
--c : This prints only a count of the lines that match a pattern
--h : Display the matched lines, but do not display the filenames.
+-f : Searches only the filenames of text-type files for matches to the regex. 
+	(returns list)
+-a : Special case of -f. Matches regex in filenames of all files, not just 
+	text-type files.
+-c : This prints only a count of the lines that match a pattern 
+	(returns dict)
+-h : Display the matched lines, but do not display the filenames. 
+	(returns list)
 -i : case-insensitive match
--l : Displays list of a filenames only.
--n : Display the matched lines and their line numbers.
--v : This prints out all the lines that do not match the pattern
--w : Match whole word
--o : Print only the matched parts of a matching line,
- with each such part on a separate output line.
+	(does not affect return type)
+-l : Displays list of a filenames only. 
+	(returns list)
+-n : Display the matched lines and their line numbers. 
+	(returns dict mapping to tuples)
+-v : Matches all the lines that DO NOT match the pattern
+	(does not affect return type)
+-w (NOT IMPLEMENTED): Match whole word
+-o (NOT IMPLEMENTED): Print only the matched parts of a matching line,
+	 with each such part on a separate output line.
 -r : Recursively searches through the entire directory tree beneath a given
-directory (all subdirectories within that directory as well as the directory
-itself)
+	directory (all subdirectories within that directory as well as the 
+	directory itself)
+	(does not affect return type)
 	"""
-	home = 'C:\\Users\\molso\\AppData\\Local\\Programs\\Python\\Python38-32'
-	dirIsFile = False
-	grepParser = re.compile("(?P<options>(?:-[a-z] )*)'(?P<regex>.+)' (?P<File_or_containing_directory>/.+)")
+	grepParser = re.compile(("(?P<options>(?:-[a-z]\s+)*)"
+						  "'(?P<regex>.+)' "
+						  "(?P<File_or_containing_directory>/.+)"))
 	parsedInput = re.findall(grepParser, Input)[0]
-	options = parsedInput[0]
-	regex = re.compile(parsedInput[1])
-	dirName = str.join("\\", parsedInput[2].split('/')[1:])
+	options = list(map(lambda x: x.lower().strip(),
+					filter(lambda x: len(x)>0,
+						   re.split("(?:\s+|^)-",parsedInput[0])
+						   ))) 
+	#split the options substring into letters, convert to lower-case
+	
+	regex = parsedInput[1]
+	dirName = os.path.abspath(str.join("\\", parsedInput[2].split('/')[1:]))
+	
+	#print(options,regex,dirName)
 
-	if not re.match('C:', dirName):
-		dirName = home + '\\' + dirName
-
-	c = ('c' in re.findall("[a-z]", options))
-	h = ('h' in re.findall("[a-z]", options))
-	i = ('i' in re.findall("[a-z]", options))
-	l = ('l' in re.findall("[a-z]", options))
-	n = ('n' in re.findall("[a-z]", options))
-	v = ('v' in re.findall("[a-z]", options))
-	w = ('w' in re.findall("[a-z]", options))
-	o = ('o' in re.findall("[a-z]", options))
-	r = ('r' in re.findall("[a-z]", options))
-
-	if (re.search("\.[a-z]{2,4}$", dirName)):
-		dirIsFile = True
+	c = ('c' in options)
+	h = ('h' in options)
+	i = ('i' in options)
+	l = ('l' in options)
+	n = ('n' in options)
+	v = ('v' in options)
+	w = ('w' in options)
+	o = ('o' in options)
+	r = ('r' in options)
+	f = ('f' in options)
+	a = ('a' in options)
 
 	goodFiles = {}
 	badFiles = {}
 	goodFilesLineNums = {}
 	badFilesLineNums = {}
+	
+	if i:
+		goodness_condition = lambda x: re.search(regex,x,re.I)
+	else:
+		goodness_condition = lambda x: re.search(regex,x)
+	
+	dirIsFile = (re.search("\.[a-z]{2,5}$", dirName,re.I) is not None)
 	if not dirIsFile:
-		filesToSearch=[]
 		if r:
-						tree=os.walk(dirName)
-						treefiles=[]
-						for root, dirs, files in tree:
-								for file in files:
-										treefiles.append(os.path.join(root, file))
-						filesToSearch=treefiles
+			filesToSearch=[]
+			for root, dirs, files in os.walk(dirName):
+				for file in files:
+					filesToSearch.append(os.path.join(root, file))
 		else:
-			for file in os.listdir(dirName):
-				filesToSearch.append(os.path.join(dirName, file))
-		#return filesToSearch ###Remove this later
+			filesToSearch = os.listdir(dirName)
+		textTypeFiles = "\.(txt|py|ipynb|json|js|htm[l]?|css|[ct]sv|r|Rmd|sql|fwf)$"
 		for file in filesToSearch:
-			if (re.search(textTypeFiles, file)):
-				with open(file) as f:
-					try:
-						lines = f.readlines()
-					except UnicodeDecodeError:
-						print("Unicode decode error on filename "+file)
-					for ind in range(len(lines)):
-						line=lines[ind]
-						if not i:
-							if re.search(regex, lines[ind]):
-								goodFiles.setdefault(file, [])
-								goodFiles[file].append(line)
-								goodFilesLineNums.setdefault(file, [])
-								goodFilesLineNums[file].append((ind, line))
-							else:
-								badFiles.setdefault(file, [])
-								badFiles[file].append(line)
-								badFilesLineNums.setdefault(file, [])
-								badFilesLineNums[file].append((ind, line))
-						else:
-							if re.search(regex, line.lower()):
-								goodFiles.setdefault(file, [])
-								goodFiles[file].append(line)
-								goodFilesLineNums.setdefault(file, [])
-								goodFilesLineNums[file].append((ind, line))
-							else:
-								badFiles.setdefault(file, [])
-								badFiles[file].append(line)
-								badFilesLineNums.setdefault(file, [])
-								badFilesLineNums[file].append((ind, line))
+			file = os.path.join(dirName,file)
+			if f and a:
+				if goodness_condition(file):
+					goodFiles.setdefault(file,0)
+				else:
+					badFiles.setdefault(file,0)
+			elif (re.search(textTypeFiles, file)):
+				if f:
+					if goodness_condition(file):
+						goodFiles.setdefault(file,0)
+					else:
+						badFiles.setdefault(file,0)
+					continue
+				lines = get_lines_best_encoding(file,print_on_exception=True)
+				for ind in range(len(lines)):
+					line=lines[ind]
+					if goodness_condition(line):
+						goodFiles.setdefault(file, [])
+						goodFiles[file].append(line)
+						goodFilesLineNums.setdefault(file, [])
+						goodFilesLineNums[file].append((ind, line))
+					else:
+						badFiles.setdefault(file, [])
+						badFiles[file].append(line)
+						badFilesLineNums.setdefault(file, [])
+						badFilesLineNums[file].append((ind, line))
 
 	if dirIsFile:
+		if f:
+			if goodness_condition(file):
+				goodFiles.setdefault(file,0)
+			else:
+				badFiles.setdefault(file,0)
 		file=dirName
-		with open(dirName, encoding="utf-8") as f:
-			lines = f.readlines()
-			for ind in range(len(lines)):
-				line = lines[ind]
-				if not i:
-					if re.search(regex, line):
-						goodFiles.setdefault(dirName, [])
-						goodFiles[dirName].append(line)
-						goodFilesLineNums.setdefault(dirName, [])
-						goodFilesLineNums[dirName].append((ind, line))
-					else:
-						badFiles.setdefault(file, [])
-						badFiles[file].append(line)
-						badFilesLineNums.setdefault(file, [])
-						badFilesLineNums[file].append((ind, line))
-				else:
-					if re.search(regex, line.lower()):
-						goodFiles.setdefault(dirName, [])
-						goodFiles[dirName].append(line)
-						goodFilesLineNums.setdefault(dirName, [])
-						goodFilesLineNums[dirName].append((ind, line))
-					else:
-						badFiles.setdefault(file, [])
-						badFiles[file].append(line)
-						badFilesLineNums.setdefault(file, [])
-						badFilesLineNums[file].append((ind, line))
-
+		lines = get_lines_best_encoding(file,print_on_exception=True)
+		for ind in range(len(lines)):
+			line = lines[ind]
+			if goodness_condition(line):
+				goodFiles.setdefault(dirName, [])
+				goodFiles[dirName].append(line)
+				goodFilesLineNums.setdefault(dirName, [])
+				goodFilesLineNums[dirName].append((ind, line))
+			else:
+				badFiles.setdefault(file, [])
+				badFiles[file].append(line)
+				badFilesLineNums.setdefault(file, [])
+				badFilesLineNums[file].append((ind, line))
+	
+	if f:
+		if v:
+			return list(badFiles.keys())
+		return list(goodFiles.keys())
 	if v:
 		if n:
 			return badFilesLineNums
@@ -253,13 +398,13 @@ itself)
 				line = goodFiles[key][ind]
 				linelist.append(line)
 				linelistWithNums.append((ind, line))
-		if n: return linelistWithNums
+		if n: 
+			return linelistWithNums
 		return linelist
 	if n:
 		return goodFilesLineNums
 	if l:
 		return list(goodFiles.keys())
-
 	return goodFiles
 
 def sed(pattern, replacement, fileIn, fileOut='', recursive=False):
