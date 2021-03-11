@@ -17,7 +17,7 @@ numstr: Matches all real numbers.
 splitBefore: splits a string before each index in a list of indices.
 insertBefore: inserts another string into a string before each index in a list of indices.
 '''
-import re, os, time
+import re, os, time,random,string
 pizzabeer="1!! Bob bought -2.34 pizzas, and I have -76 beers now\n. HODOR 55. I am 10\n I eat many fro8l a8 8b 9" #pizzabeer exists for testing regular expressions
 timeregex=re.compile('(\d{1,2}):(\d\d) ([ap]m)\s?',re.I)
 def timeTo24hr(tstring):
@@ -30,6 +30,9 @@ def timeTo24hr(tstring):
 		return parts[0].zfill(2)+':'+parts[1]
 	elif re.match('pm',parts[2],re.I):
 		return str(int(parts[0])+12)+':'+parts[1]
+
+def mkpassword(length=16,allowed_chars='!@#$%^&*()|<>?~[]'+string.ascii_letters+string.digits):
+	print(''.join(random.choices(allowed_chars,k=length)))
 
 def getCurDateStr():
 	t=time.localtime()
@@ -238,6 +241,8 @@ def get_lines_best_encoding(fname, print_on_exception = False):
 			raise UnicodeDecodeError("Could not find the encoding for this file.")
 		print("Could not find the encoding for this file.")
 
+textTypeFiles = "\.(txt|py|ipynb|json|js|htm[l]?|css|[ct]sv|R|Rmd|sql|fwf|c|cpp)$"
+
 def grep(Input):
 	"""
 The grep filter searches a .txt file for a particular pattern of characters,
@@ -247,6 +252,12 @@ in the file is referred to as the regular expression
 
 Format for Input:
 [options] 'pattern' /[filename or containing directory]
+
+Alternative format for input:
+[options] '[filename pattern]' /[containing directory] ->> [options 2] '[text pattern]'
+	If the command is in this alternative format, finds the set of files in [containing directory]
+	that match [filename pattern] and then greps for [options 2] '[text pattern]' in those files.
+	See subGrep.
 
 By default, returns a dict mapping filenames to a list of lines in that file
 	where the regex is matched. Some options change the return type.
@@ -273,14 +284,20 @@ Options Description
 	(returns dict mapping to tuples)
 -v : Matches all the lines that DO NOT match the pattern
 	(does not affect return type)
--w (NOT IMPLEMENTED): Match whole word
--o (NOT IMPLEMENTED): Print only the matched parts of a matching line,
+-o : Match whole word or filename. For filenames, matches only the part
+	of the filename that is not in the parent directory name (so any subdir
+	name plus the file name in the -r case or just the filename otherwise).
+-w (NOT IMPLEMENTED): Print only the matched parts of a matching line,
 	 with each such part on a separate output line.
 -r : Recursively searches through the entire directory tree beneath a given
 	directory (all subdirectories within that directory as well as the 
 	directory itself)
 	(does not affect return type)
 	"""
+	if ' ->> ' in Input:
+		fGrep,tGrep = Input.split(' ->> ')
+		return subGrep(fGrep,tGrep)
+		
 	grepParser = re.compile(("(?P<options>(?:-[a-z]\s+)*)"
 						  "'(?P<regex>.+)' "
 						  "(?P<File_or_containing_directory>/.+)"))
@@ -314,35 +331,52 @@ Options Description
 	badFilesLineNums = {}
 	
 	if i:
-		goodness_condition = lambda x: re.search(regex,x,re.I)
-	else:
-		goodness_condition = lambda x: re.search(regex,x)
-	
-	dirIsFile = (re.search("\.[a-z]{2,5}$", dirName,re.I) is not None)
-	if not dirIsFile:
-		if r:
-			filesToSearch=[]
-			for root, dirs, files in os.walk(dirName):
-				for file in files:
-					filesToSearch.append(os.path.join(root, file))
+		if o:
+			goodness_condition = lambda line: any((re.fullmatch(regex,x,re.I) is not None) \
+													for x in line.split())
+			f_goodness_condition = lambda fname: re.fullmatch(regex,fname,re.I)
 		else:
-			filesToSearch = os.listdir(dirName)
-		textTypeFiles = "\.(txt|py|ipynb|json|js|htm[l]?|css|[ct]sv|r|Rmd|sql|fwf)$"
-		for file in filesToSearch:
-			file = os.path.join(dirName,file)
+			goodness_condition = lambda line: re.search(regex,line,re.I)
+			f_goodness_condition = lambda fname: re.search(regex,fname,re.I)
+	else:
+		if o:
+			goodness_condition = lambda line: any((re.fullmatch(regex,x) is not None) \
+													for x in line.split())
+			f_goodness_condition = lambda fname: re.fullmatch(regex,fname)
+		else:
+			goodness_condition = lambda line: re.search(regex,line)
+			f_goodness_condition = lambda fname: re.search(regex,fname)
+	
+	dirIsFile = os.path.isfile(dirName)
+	if not dirIsFile:
+		try:
+			if r:
+				filesToSearch=[]
+				for root, dirs, files in os.walk(dirName):
+					for fname in files:
+						filesToSearch.append(os.path.join(root, fname))
+			else:
+				filesToSearch = os.listdir(dirName)
+		except:
+			if re.search(textTypeFiles, fname):
+				dirIsFile = True
+			filesToSearch = []
+		
+		for fname in filesToSearch:
+			file = os.path.join(dirName,fname)
 			if f and a:
-				if goodness_condition(file):
+				if f_goodness_condition(fname):
 					goodFiles.setdefault(file,0)
 				else:
 					badFiles.setdefault(file,0)
-			elif (re.search(textTypeFiles, file)):
+			elif (re.search(textTypeFiles, fname)):
 				if f:
-					if goodness_condition(file):
+					if f_goodness_condition(fname):
 						goodFiles.setdefault(file,0)
 					else:
 						badFiles.setdefault(file,0)
 					continue
-				lines = get_lines_best_encoding(file,print_on_exception=True)
+				lines = get_text_best_encoding(file,print_on_exception=True).split('\n')
 				for ind in range(len(lines)):
 					line=lines[ind]
 					if goodness_condition(line):
@@ -357,25 +391,26 @@ Options Description
 						badFilesLineNums[file].append((ind, line))
 
 	if dirIsFile:
+		file=dirName
 		if f:
-			if goodness_condition(file):
+			if f_goodness_condition(file):
 				goodFiles.setdefault(file,0)
 			else:
 				badFiles.setdefault(file,0)
-		file=dirName
-		lines = get_lines_best_encoding(file,print_on_exception=True)
-		for ind in range(len(lines)):
-			line = lines[ind]
-			if goodness_condition(line):
-				goodFiles.setdefault(dirName, [])
-				goodFiles[dirName].append(line)
-				goodFilesLineNums.setdefault(dirName, [])
-				goodFilesLineNums[dirName].append((ind, line))
-			else:
-				badFiles.setdefault(file, [])
-				badFiles[file].append(line)
-				badFilesLineNums.setdefault(file, [])
-				badFilesLineNums[file].append((ind, line))
+		else:
+			lines = get_text_best_encoding(file,print_on_exception=True).split('\n')
+			for ind in range(len(lines)):
+				line = lines[ind]
+				if goodness_condition(line):
+					goodFiles.setdefault(dirName, [])
+					goodFiles[dirName].append(line)
+					goodFilesLineNums.setdefault(dirName, [])
+					goodFilesLineNums[dirName].append((ind, line))
+				else:
+					badFiles.setdefault(file, [])
+					badFiles[file].append(line)
+					badFilesLineNums.setdefault(file, [])
+					badFilesLineNums[file].append((ind, line))
 	
 	if f:
 		if v:
@@ -407,6 +442,23 @@ Options Description
 		return list(goodFiles.keys())
 	return goodFiles
 
+def subGrep(fileGrep,textGrep):
+	'''Returns the combined results of the textGrep query on the text of all
+files in the result set from fileGrep.
+	'''
+	fGrep,tGrep = fileGrep.strip(), textGrep.strip()
+	if "-f" not in fGrep:
+		fGrep = '-f '+fGrep
+	if re.search("-[hfl]",tGrep):
+		output = []
+		for f in grep(fGrep):
+			output.extend(grep(tGrep+' /'+f))
+	else:
+		output = {}
+		for f in grep(fGrep):
+			output.update(grep(tGrep+' /'+f))
+	return output
+
 def sed(pattern, replacement, fileIn, fileOut='', recursive=False):
 	"""
 Reads fileIn and writes to fileOut (creating it if necessary).
@@ -431,7 +483,7 @@ zargothrax=gsfd.grep("-i -r 'argothrax' /C:/Users/molso/Documents/html stuff")
 		print("""gsfd.sed works better if you feed it patterns made by re.compile with the
 			re.MULTILINE flag.""")
 	if not fileOut:
-		fname_type=re.findall('(.+)(\.(?:txt|js|htm(?:l)?|py|css|csv)$)',fileIn)
+		fname_type=re.findall(textTypeFiles,fileIn)
 		if not fname_type:
 			return None
 		fname=fname_type[0][0]
@@ -439,10 +491,9 @@ zargothrax=gsfd.grep("-i -r 'argothrax' /C:/Users/molso/Documents/html stuff")
 		fname_out=fname+"_sed"+getCurDateStr()
 		fileOut=fname_out+type
 	try:
-		with open(fileIn) as fin:
-			lines=fin.readlines()
-			finStr=str.join('', lines)
-			foutStr=re.sub(pattern, replacement, finStr)
+		lines = get_lines_best_encoding(fileIn,print_on_exception=True)
+		finStr = ''.join(lines)
+		foutStr=re.sub(pattern, replacement, finStr)
 	except FileNotFoundError:
 		print("Could not find the file", fileIn)
 		return None
